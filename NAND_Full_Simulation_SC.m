@@ -514,12 +514,6 @@ PEC2x(BUFFS2x(1)+1:Nx2-BUFFS2x(2), ...
 
 % PERFOM DIELECTRIC SMOOTHING
 if DO_DIELECTRIC_SMOOTHING
-    if USE_TMZ_MODE
-        ID  = ones(2,2)./4;
-        ER2x(1:Nx2-1,1:Ny2-1) = conv2(ER2x,ID,'valid');
-        UR2x(1:Nx2-1,1:Ny2-1) = conv2(UR2x,ID,'valid');
-        CHI2x(1:Nx2-1,1:Ny2-1)= conv2(CHI2x,ID,'valid');
-    end
     if USE_TEZ_MODE
         ID  = ones(2,2)./4;
         ER2x(1:Nx2-1,1:Ny2-1) = conv2(ER2x,ID,'valid');
@@ -530,14 +524,6 @@ if DO_DIELECTRIC_SMOOTHING
 end
 
 % PARSE BACK ONTO 1X GRID
-if USE_TMZ_MODE
-    ERz = ER2x(1:2:Nx2,1:2:Ny2);
-    URx = UR2x(1:2:Nx2,2:2:Ny2);
-    URy = UR2x(2:2:Nx2,1:2:Ny2);
-    if APPLY_NONLINEARITY
-        CHI = CHI2x(1:2:Nx2,1:2:Ny2);
-    end
-end
 
 if USE_TEZ_MODE
     URz = UR2x(1:2:Nx2,1:2:Ny2);
@@ -829,56 +815,6 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% INITIALIZE PARAMETERS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if USE_TMZ_MODE
-    % COMPUTE UPDATE COEFFICIENTS
-    % Hx component of the field
-    sigHx = sigx(1:2:Nx2,2:2:Ny2);
-    sigHy = sigy(1:2:Nx2,2:2:Ny2);
-    mHx0 = 1/dt + sigHy/(2*eps0);
-    mHx1 = (1/dt - sigHy./(2*eps0))./mHx0;
-    mHx2 = - c0 ./ URx ./ mHx0;
-    mHx3 = - (c0*dt/eps0) * sigHx ./ URx ./mHx0;
-    % Hy component of the field
-    sigHx = sigx(2:2:Nx2,1:2:Ny2);
-    sigHy = sigy(2:2:Nx2,1:2:Ny2);
-    mHy0 = 1/dt + sigHx /(2*eps0);
-    mHy1 = (1/dt - sigHx/(2*eps0))./mHy0;
-    mHy2 = -c0./URy./mHy0;
-    mHy3 = -(c0*dt/eps0)* sigHy ./URy ./ mHy0;
-    % Dz component of the field
-    sigDx = sigx(1:2:Nx2,1:2:Ny2);
-    sigDy = sigy(1:2:Nx2,1:2:Ny2);
-    mDz0 = (1/dt) + (sigDx + sigDy)/(2*eps0) ...
-        + sigDx.*sigDy*(dt/4/eps0^2);
-    mDz1 = (1/dt) - (sigDx + sigDy)/(2*eps0) ...
-        - sigDx.*sigDy*(dt/4/eps0^2);
-    mDz1 = mDz1 ./ mDz0;
-    mDz2 = c0./mDz0;
-    mDz4 = - (dt/eps0^2)*sigDx.*sigDy./mDz0;
-    
-    % Ez component of the field
-    mEz1 = 1./ERz;
-    % mHx = -c0*dt./Miuxx;  % without PML
-    % mHy = -c0*dt./Miuyy;
-    % mDz = c0*dt;
-    % mEz = 1./Epszz;
-    
-    % INITIALIZE FIELDS
-    Hx = zeros(Nx,Ny);
-    Hy = zeros(Nx,Ny);
-    Dz = zeros(Nx,Ny);
-    Ez = zeros(Nx,Ny);
-    
-    % INITIALIZE CURL TERMS
-    CEx = zeros(Nx,Ny);
-    CEy = zeros(Nx,Ny);
-    CHz = zeros(Nx,Ny);
-    
-    % INITIALIZE INTEGRATION ARRAYS
-    ICEx = zeros(Nx,Ny);
-    ICEy = zeros(Nx,Ny);
-    IDz  = zeros(Nx,Ny);
-end
 if USE_TEZ_MODE
     % Dx COMPONENT
     sigDx = sigx(1:2:Nx2,2:2:Ny2);
@@ -1007,378 +943,163 @@ end
 %% MAIN FDTD LOOP   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for T = 1:STEPS
-    if USE_TMZ_MODE
-        %% COMPUTE CURL OF E FIELD
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if USE_PERIODIC_BC
-            CEx(1:Nx,1:Ny-1)    = (Ez(1:Nx,2:Ny) - Ez(1:Nx,1:Ny-1))./dy;
-            CEx(1:Nx,Ny)        = (Ez(1:Nx,1) - Ez(1:Nx, Ny))./dy;       %(Ez(1:Nx,1) - Ez(1:Nx, Ny))./dy;
-            CEy(1:Nx-1,1:Ny)    = -(Ez(2:Nx,1:Ny) - Ez(1:Nx-1,1:Ny))./dx;
-            CEy(Nx,1:Ny)        = -(Ez(1,1:Ny) - Ez(Nx,1:Ny))./dx;
-        end
-        if USE_DIRICHLET_BC
-            CEx(1:Nx,1:Ny-1)    = (Ez(1:Nx,2:Ny) - Ez(1:Nx,1:Ny-1))./dy;
-            CEx(1:Nx,Ny)        = (0 - Ez(1:Nx, Ny))./dy;       %(Ez(1:Nx,1) - Ez(1:Nx, Ny))./dy;
-            CEy(1:Nx-1,1:Ny)    = -(Ez(2:Nx,1:Ny) - Ez(1:Nx-1,1:Ny))./dx;
-            CEy(Nx,1:Ny)        = -(0 - Ez(Nx,1:Ny))./dx;
-        end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% INJECT TF/SF SOURCE INTO CURL OF E
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if USE_FULL_TFSF_BOX
-            CEx(Nx_src_lo:Nx_src_hi, Ny_src_lo) = ...
-                CEx(Nx_src_lo:Nx_src_hi, Ny_src_lo) - 1/dy .* Ez_aux(2);
-            
-            CEy(Nx_src_hi, Ny_src_lo:Ny_src_hi) = ...
-                CEy(Nx_src_hi, Ny_src_lo:Ny_src_hi) - 1/dx .* Ez_aux;
-            CEy(Nx_src_lo, Ny_src_lo:Ny_src_hi) = ...
-                CEy(Nx_src_lo, Ny_src_lo:Ny_src_hi) + 1/dx .* Ez_aux;
-            
-            CEx(Nx_src_lo:Nx_src_hi, Ny_src_hi) = ...
-                CEx(Nx_src_lo:Nx_src_hi, Ny_src_hi) - 1/dy .* Ez_aux(Ny_aux-1);
-        end
-        if USE_TFSF_SOURCE
-            CEx(Nx_src_lo:Nx_src_hi, Ny_src_lo-1) = ...
-                CEx(Nx_src_lo:Nx_src_hi, Ny_src_lo-1) - 1/dy .* Esrc_full(:,T);
-        end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% UPDATE H INTEGRATIONS
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        ICEx = ICEx + CEx;
-        ICEy = ICEy + CEy;
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% UPDATE H FIELD
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        Hx = mHx1 .* Hx + mHx2 .* CEx + mHx3 .* ICEx;
-        Hy = mHy1 .* Hy + mHy2 .* CEy + mHy3 .* ICEy;
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% UPDATE AUXILARY GRID
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if USE_FULL_TFSF_BOX
-            % UPDATE Hy FROM Ez
-            Hy_aux(1:Ny_aux-1) = Hy_aux(1:Ny_aux-1) +...
-                mHy_aux(1:Ny_aux-1).*(Ez_aux(2:Ny_aux) - Ez_aux(1:Ny_aux-1));
-            Hy_aux(Ny_aux) = Hy_aux(Ny_aux) + mHy_aux(Ny_aux).*(E3 - Ez_aux(Ny_aux));
-            
-            % INJECT Hy SOURCE
-            Hy_aux(ny_src-1) = Hy_aux(ny_src-1) - mHy_aux(ny_src-1).*Esrc(T);
-            
-            % Hy BOUNDARY CONDITIONS
-            H3 = H2;
-            H2 = H1;
-            H1 = Hy_aux(1);
-            
-            % UPDATE Ez FROM Hy
-            Ez_aux(1) = Ez_aux(1) + mEz_aux(1)*(Hy_aux(1) - H3);
-            Ez_aux(2:Ny_aux) = Ez_aux(2:Ny_aux) + ...
-                mEz_aux(2:Ny_aux).*(Hy_aux(2:Ny_aux) - Hy_aux(1:Ny_aux-1));
-            
-            % E BOUNDARY CONDITIONS
-            E3 = E2;
-            E2 = E1;
-            E1 = Ez_aux(Ny_aux);
-            
-            % INJECT E SOURCE
-            Ez_aux(ny_src) = Ez_aux(ny_src) + mEz_aux(ny_src).*Hsrc(T);
-        end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% COMPUTE CURL OF H FIELD
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if USE_PERIODIC_BC
-            % i>1; j>1;
-            CHz(2:Nx, 2:Ny) = (Hy(2:Nx,2:Ny) - Hy(1:Nx-1,2:Ny))./dx ...
-                - (Hx(2:Nx,2:Ny) - Hx(2:Nx,1:Ny-1))./dy;
-            % i = 1; j>1;
-            CHz(1,2:Ny) = (Hy(1,2:Ny) - Hy(Nx,2:Ny))./dx ...
-                - (Hx(1,2:Ny) - Hx(1,1:Ny-1))./dy;
-            % i>1; j = 1;
-            CHz(2:Nx, 1) = (Hy(2:Nx,1) - Hy(1:Nx-1,1))./dx ...
-                - (Hx(2:Nx,1) - Hx(2:Nx,Ny))./dy;
-            % i = 1; j = 1;
-            CHz(1,1) = (Hy(1,1) - Hy(Nx,1))./dx ...
-                - (Hx(1,1) - Hx(1,Ny))./dy;
-        end
-        if USE_DIRICHLET_BC
-            % CALCULATE CURL OF H FIELD
-            % i>1; j>1;
-            CHz(2:Nx, 2:Ny) = (Hy(2:Nx,2:Ny) - Hy(1:Nx-1,2:Ny))./dx ...
-                - (Hx(2:Nx,2:Ny) - Hx(2:Nx,1:Ny-1))./dy;
-            % i = 1; j>1;
-            CHz(1,2:Ny) = (Hy(1,2:Ny) - 0)./dx ...
-                - (Hx(1,2:Ny) - Hx(1,1:Ny-1))./dy;
-            % i>1; j = 1;
-            CHz(2:Nx, 1) = (Hy(2:Nx,1) - Hy(1:Nx-1,1))./dx ...
-                - (Hx(2:Nx,1) - 0)./dy;
-            % i = 1; j = 1;
-            CHz(1,1) = (Hy(1,1) - 0)./dx ...
-                - (Hx(1,1) - 0)./dy;
-        end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% INJECT TF/SF SOURCE INTO CURL OF H
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if USE_FULL_TFSF_BOX
-            CHz(Nx_src_lo:Nx_src_hi, Ny_src_lo) = ...
-                CHz(Nx_src_lo:Nx_src_hi, Ny_src_lo) - 1/dy .* Hy_aux(2);
-            CHz(Nx_src_lo:Nx_src_hi, Ny_src_hi) = ...
-                CHz(Nx_src_lo:Nx_src_hi, Ny_src_hi) - 1/dy .* Hy_aux(Ny_aux-1);
-        end
-        if USE_TFSF_SOURCE
-            CHz(Nx_src_lo:Nx_src_hi, Ny_src_lo) = ...
-                CHz(Nx_src_lo:Nx_src_hi, Ny_src_lo) + 1/dy .* Hsrc_full(:,T);
-        end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% UPDATE D INTEGRATIONS
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        IDZ = IDz + Dz;
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% UPDATE D FIELD
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        Dz = mDz1.* Dz + mDz2 .* CHz + mDz4 .* IDz;
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %     %% INJECT SOURCE
-        %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %     Dz(nx_src,ny_src) = Dz(nx_src,ny_src) + Esrc(T);
-        %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% INJECT D HARD SOURCE
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if USE_HARD_SOURCE
-            if USE_DSRC
-                Dz(Nx_src_lo:Nx_src_hi, Ny_src_lo) = Dsrc_full(:,T);
-            end
-        end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% UPDATE E FIELD
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if APPLY_NONLINEARITY
-            Ez = (Dz / eps0 + CHI.*2.*Ez.^3 ) ./ ...
-                (1 ./ (mEz1*eps0) + CHI.*3.*Ez.^2);
-        else
-            Ez = mEz1 .* Dz;
-        end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% INJECT HARD E SOURCE
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if USE_HARD_SOURCE
-            if USE_ESRC
-                Ez(Nx_src_lo:Nx_src_hi, Ny_src_lo) = Esrc_full(:,T);
-            end
-        end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% CAlCULATE TRANSFER COEFFS
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if DO_TRANSFER_CALCULATION
-            Ez_port_1(:,T) = Dsrc_mod(1,ports.p1.x);
-            Ez_port_2(:,T) = Ez(ports.p2.x,ports.p2.y);
-            Ez_port_3(:,T) = Ez(ports.p3.x,ports.p3.y)';
-            curr_trn_2(T) = sum(Ez_port_1(:,T).*Ez_port_2(:,T))./ ...
-                sum(Ez_port_1(:,T).^2);
-            curr_trn_3(T) = sum(Ez_port_1(:,T).*(Ez_port_3(:,T)))./ ...
-                sum(Ez_port_1(:,T).^2);
-        end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% VISUALIZE THE FIELD
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if ~mod(T,FPS)
-            if DO_TRANSFER_CALCULATION
-                subplot(2,3,[1 4]);
-            end
-            OPTS.cmap = 'jet';
-            if USE_DSRC
-                OPTS.emax = 1.1.*max(max(Dsrc_full));
-            else
-                OPTS.emax = 1.1.*max(max(Esrc_full));
-            end
-            draw2d(xa,ya,ERz,Ez,NPML,OPTS);
-            axis image;
-            xlabel('x');
-            ylabel('y');
-            if DO_TRANSFER_CALCULATION
-                subplot(2,3,[2 3]);
-                plot(curr_trn_2(max(1,T-500):T));
-                subplot(2,3,[5 6]);
-                plot(curr_trn_3(max(1,T-500):T));
-            end
-            if RECORD_ANIMATION
-                F = getframe(gca);
-                writeVideo(vidObj,F);
-            end
-            drawnow;
-        end
+    % COMPUTE CURL OF E
+    % Hz Ex Ey CEz
+    if USE_DIRICHLET_BC
+        %             for i = 1:Nx-1
+        %                 for j = 1:Ny-1
+        %                     CEz(i,j) = (Ey(i+1,j) - Ey(i,j))/dx - ...
+        %                         (Ex(i,j+1) - Ex(i,j))/dy;
+        %                 end
+        %                 CEz(i,Ny) = (Ey(i+1,Ny) - Ey(i,Ny))/dx - ...
+        %                     (0 - Ex(i,Ny))/dy;
+        %             end
+        %             for j = 1:Ny-1
+        %                 CEz(Nx,j) = (0 - Ey(Nx,j))/dx - ...
+        %                     (Ex(Nx,j+1) - Ex(Nx,j))/dy;
+        %             end
+        %             CEz(Nx,Ny) = (0 - Ey(Nx,Ny))/dx - ...
+        %                 (0 - Ex(Nx,Ny))/dy;
+        CEz(1:Nx-1,1:Ny-1) = (Ey(2:Nx,1:Ny-1) - Ey(1:Nx-1,1:Ny-1))/dx - ...
+            (Ex(1:Nx-1,2:Ny) - Ex(1:Nx-1,1:Ny-1))/dy;
+        CEz(1:Nx-1,Ny) = (Ey(2:Nx,Ny) - Ey(1:Nx-1,Ny))/dx - ...
+            (0 - Ex(1:Nx-1,Ny))/dy;
+        CEz(Nx,1:Ny-1) = (0 - Ey(Nx,1:Ny-1))/dx - ...
+            (Ex(Nx,2:Ny) - Ex(Nx,1:Ny-1))/dy;
+        CEz(Nx,Ny) = (0 - Ey(Nx,Ny))/dx - ...
+            (0 - Ex(Nx,Ny))/dy;
     end
-    if USE_TEZ_MODE
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% COMPUTE CURL OF E
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % Hz Ex Ey CEz
-        if USE_DIRICHLET_BC
-            %             for i = 1:Nx-1
-            %                 for j = 1:Ny-1
-            %                     CEz(i,j) = (Ey(i+1,j) - Ey(i,j))/dx - ...
-            %                         (Ex(i,j+1) - Ex(i,j))/dy;
-            %                 end
-            %                 CEz(i,Ny) = (Ey(i+1,Ny) - Ey(i,Ny))/dx - ...
-            %                     (0 - Ex(i,Ny))/dy;
-            %             end
-            %             for j = 1:Ny-1
-            %                 CEz(Nx,j) = (0 - Ey(Nx,j))/dx - ...
-            %                     (Ex(Nx,j+1) - Ex(Nx,j))/dy;
-            %             end
-            %             CEz(Nx,Ny) = (0 - Ey(Nx,Ny))/dx - ...
-            %                 (0 - Ex(Nx,Ny))/dy;
-            CEz(1:Nx-1,1:Ny-1) = (Ey(2:Nx,1:Ny-1) - Ey(1:Nx-1,1:Ny-1))/dx - ...
-                (Ex(1:Nx-1,2:Ny) - Ex(1:Nx-1,1:Ny-1))/dy;
-            CEz(1:Nx-1,Ny) = (Ey(2:Nx,Ny) - Ey(1:Nx-1,Ny))/dx - ...
-                (0 - Ex(1:Nx-1,Ny))/dy;
-            CEz(Nx,1:Ny-1) = (0 - Ey(Nx,1:Ny-1))/dx - ...
-                (Ex(Nx,2:Ny) - Ex(Nx,1:Ny-1))/dy;
-            CEz(Nx,Ny) = (0 - Ey(Nx,Ny))/dx - ...
-                (0 - Ex(Nx,Ny))/dy;
-        end
-        if USE_PERIODIC_BC
-            %             for i = 1:Nx-1
-            %                 for j = 1:Ny-1
-            %                     CEz(i,j) = (Ey(i+1,j) - Ey(i,j))/dx - ...
-            %                         (Ex(i,j+1) - Ex(i,j))/dy;
-            %                 end
-            %                 CEz(i,Ny) = (Ey(i+1,Ny) - Ey(i,Ny))/dx - ...
-            %                     (Ex(i,0) - Ex(i,Ny))/dy;
-            %             end
-            %             for j = 1:Ny-1
-            %                 CEz(Nx,j) = (Ey(0,j) - Ey(Nx,j))/dx - ...
-            %                     (Ex(Nx,j+1) - Ex(Nx,j))/dy;
-            %             end
-            %             CEz(Nx,Ny) = (Ey(0,Ny) - Ey(Nx,Ny))/dx - ...
-            %                 (Ex(Nx,0) - Ex(Nx,Ny))/dy;
-            %
-            CEz(1:Nx-1,1:Ny-1) = (Ey(2:Nx,1:Ny-1) - Ey(1:Nx-1,1:Ny-1))/dx - ...
-                (Ex(1:Nx-1,2:Ny) - Ex(1:Nx-1,1:Ny-1))/dy;
-            CEz(1:Nx-1,Ny) = (Ey(2:Nx,Ny) - Ey(1:Nx-1,Ny))/dx - ...
-                (Ex(1:Nx-1,0) - Ex(1:Nx-1,Ny))/dy;
-            CEz(Nx,1:Ny-1) = (Ey(0,1:Ny-1) - Ey(Nx,1:Ny-1))/dx - ...
-                (Ex(Nx,2:Ny) - Ex(Nx,1:Ny-1))/dy;
-            CEz(Nx,Ny) = (Ey(0,Ny) - Ey(Nx,Ny))/dx - ...
-                (Ex(Nx,0) - Ex(Nx,Ny))/dy;
-        end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% INJECT TF/SF SOURCE INTO E
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if USE_TFSF_SOURCE
-            CEz(Nx_src_lo_AND:Nx_src_hi_AND, Ny_src_lo_AND-1) = ...
-                CEz(Nx_src_lo_AND:Nx_src_hi_AND, Ny_src_lo_AND-1) - ...
-                Esrc_full_AND(:,T)/dy;
-            CEz(Nx_src_lo_NOT:Nx_src_hi_NOT, Ny_src_lo_NOT-1) = ...
-                CEz(Nx_src_lo_NOT:Nx_src_hi_NOT, Ny_src_lo_NOT-1) - ...
-                Esrc_full_NOT(:,T)/dy;
-        end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% UPDATE H INTEGRATIONS
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        IHz = IHz + Hz;
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% UPDATE H FIELD
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        Hz = mHz1.*Hz + mHz2.*CEz + mHz4.*IHz;
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% HARD SOURCE *OPTIONAL*
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if USE_HARD_SOURCE
-            Hz(Nx_src_lo:Nx_src_hi, Ny_src_lo) = ...
-                Hsrc_full(:,T);
-        end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% COMPUTE CURL OF H
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % Hz Ex Ey CHx CHy
-        if USE_DIRICHLET_BC
-            %             for i = 1:Nx
-            %                 CHx(i,1) = (Hz(i,1) - 0)/dy;
-            %                 for j = 2:Ny
-            %                     CHx(i,j) = (Hz(i,j) - Hz(i,j-1))/dy;
-            %                 end
-            %             end
-            %             for j = 1:Ny
-            %                 CHy(1,j) = - (Hz(1,j) - 0)/dx;
-            %             end
-            %             for i = 2:Nx
-            %                 for j = 1:Ny
-            %                     CHy(i,j) = - (Hz(i,j) - Hz(i-1,j))/dx;
-            %                 end
-            %             end
-            CHx(1:Nx,1) = (Hz(1:Nx,1) - 0)/dy;
-            CHx(1:Nx,2:Ny) = (Hz(1:Nx,2:Ny) - Hz(1:Nx,1:Ny-1))/dy;
-            CHy(1,1:Ny) = - (Hz(1,1:Ny) - 0)/dx;
-            CHy(2:Nx,1:Ny) = (Hz(1:Nx-1,1:Ny) - Hz(2:Nx,1:Ny))/dx;
-        end
-        if USE_PERIODIC_BC
-            %             for i = 1:Nx
-            %                 CHx(i,1) = (Hz(i,j) - Hz(i,Ny))/dy;
-            %                 for j = 2:Ny
-            %                     CHx(i,j) = (Hz(i,j) - Hz(i,j-1))/dy;
-            %                 end
-            %             end
-            %
-            %             for j = 1:Ny
-            %                 CHy(1,j) = - (Hz(1,j) - Hz(Nx,j))/dx;
-            %             end
-            %             for i = 2:Nx
-            %                 for j = 1:Ny
-            %                     CHy(i,j) = - (Hz(i,j) - Hz(i-1,j))/dx;
-            %                 end
-            %             end
-            CHx(1:Nx,1) = (Hz(1:Nx,1) - Hz(1:Nx,Ny))/dy;
-            CHx(1:Nx,2:Ny) = (Hz(1:Nx,2:Ny) - Hz(1:Nx,1:Ny-1))/dy;
-            CHy(1,1:Ny) = - (Hz(1,1:Ny) - Hz(Nx,1:Ny))/dx;
-            CHy(2:Nx,1:Ny) = - (Hz(2:Nx,1:Ny) - Hz(1:Nx-1,1:Ny))/dx;
-        end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% INJECT TF/SF SOURCE INTO H
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if USE_TFSF_SOURCE
-            CHx(Nx_src_lo_AND:Nx_src_hi_AND, Ny_src_lo_AND) = ...
-                CHx(Nx_src_lo_AND:Nx_src_hi_AND, Ny_src_lo_AND) + ...
-                Hsrc_full_AND(:,T)/dy;
-            
-            CHx(Nx_src_lo_NOT:Nx_src_hi_NOT, Ny_src_lo_NOT) = ...
-                CHx(Nx_src_lo_NOT:Nx_src_hi_NOT, Ny_src_lo_NOT) + ...
-                Hsrc_full_NOT(:,T)/dy;
-        end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% UPDATE D INTEGRATIONS
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        ICHx = ICHx + CHx;
-        ICHy = ICHy + CHy;
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% UPDATE D FIELD
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        Dx = mDx1.*Dx + mDx2.*CHx + mDx3.*ICHx;
-        Dy = mDy1.*Dy + mDy2.*CHy + mDy3.*ICHy;
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% UPDATE E FIELD
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if APPLY_NONLINEARITY
-            AbsD2 = (Dx.^2+Dy.^2);
-            Ex = mEx1.*Dx.*(1+mAbsDx1.*AbsD2) ./...
-                (1+mAbsDx2.*AbsD2);
-            Ey = mEy1.*Dy.*(1+mAbsDy1.*AbsD2) ./...
-                (1+mAbsDy2.*AbsD2);
-        else
-            Ex = mEx1.*Dx;
-            Ey = mEy1.*Dy;
-        end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% CALCULATE LEARNING PARAMETERS
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if DO_TRANSFER_CALCULATION
-            % AND PART
-            curr_trn_hz_AND(2:2:end,T) = Hz(rec_line_AND.x, rec_line_AND.y - NCELL(2)/2);
-            curr_trn_hz_AND(1:2:end,T) = Hz(rec_line_AND.x, rec_line_AND.y);
-            
-            % NOT PART
-            curr_trn_hz_NOT(2:2:end,T) = Hz(rec_line_NOT.x, rec_line_AND.y - NCELL(2)/2);
-            curr_trn_hz_NOT(1:2:end,T) = Hz(rec_line_NOT.x, rec_line_NOT.y);
-            
+    if USE_PERIODIC_BC
+        %             for i = 1:Nx-1
+        %                 for j = 1:Ny-1
+        %                     CEz(i,j) = (Ey(i+1,j) - Ey(i,j))/dx - ...
+        %                         (Ex(i,j+1) - Ex(i,j))/dy;
+        %                 end
+        %                 CEz(i,Ny) = (Ey(i+1,Ny) - Ey(i,Ny))/dx - ...
+        %                     (Ex(i,0) - Ex(i,Ny))/dy;
+        %             end
+        %             for j = 1:Ny-1
+        %                 CEz(Nx,j) = (Ey(0,j) - Ey(Nx,j))/dx - ...
+        %                     (Ex(Nx,j+1) - Ex(Nx,j))/dy;
+        %             end
+        %             CEz(Nx,Ny) = (Ey(0,Ny) - Ey(Nx,Ny))/dx - ...
+        %                 (Ex(Nx,0) - Ex(Nx,Ny))/dy;
+        %
+        CEz(1:Nx-1,1:Ny-1) = (Ey(2:Nx,1:Ny-1) - Ey(1:Nx-1,1:Ny-1))/dx - ...
+            (Ex(1:Nx-1,2:Ny) - Ex(1:Nx-1,1:Ny-1))/dy;
+        CEz(1:Nx-1,Ny) = (Ey(2:Nx,Ny) - Ey(1:Nx-1,Ny))/dx - ...
+            (Ex(1:Nx-1,0) - Ex(1:Nx-1,Ny))/dy;
+        CEz(Nx,1:Ny-1) = (Ey(0,1:Ny-1) - Ey(Nx,1:Ny-1))/dx - ...
+            (Ex(Nx,2:Ny) - Ex(Nx,1:Ny-1))/dy;
+        CEz(Nx,Ny) = (Ey(0,Ny) - Ey(Nx,Ny))/dx - ...
+            (Ex(Nx,0) - Ex(Nx,Ny))/dy;
+    end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% INJECT TF/SF SOURCE INTO E
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    if USE_TFSF_SOURCE
+        CEz(Nx_src_lo_AND:Nx_src_hi_AND, Ny_src_lo_AND-1) = ...
+            CEz(Nx_src_lo_AND:Nx_src_hi_AND, Ny_src_lo_AND-1) - ...
+            Esrc_full_AND(:,T)/dy;
+        CEz(Nx_src_lo_NOT:Nx_src_hi_NOT, Ny_src_lo_NOT-1) = ...
+            CEz(Nx_src_lo_NOT:Nx_src_hi_NOT, Ny_src_lo_NOT-1) - ...
+            Esrc_full_NOT(:,T)/dy;
+    end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% UPDATE H INTEGRATIONS
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    IHz = IHz + Hz;
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% UPDATE H FIELD
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Hz = mHz1.*Hz + mHz2.*CEz + mHz4.*IHz;
+    
+    % HARD SOURCE *OPTIONAL*
+    if USE_HARD_SOURCE
+        Hz(Nx_src_lo:Nx_src_hi, Ny_src_lo) = ...
+            Hsrc_full(:,T);
+    end
+    % COMPUTE CURL OF H
+    % Hz Ex Ey CHx CHy
+    if USE_DIRICHLET_BC
+        %             for i = 1:Nx
+        %                 CHx(i,1) = (Hz(i,1) - 0)/dy;
+        %                 for j = 2:Ny
+        %                     CHx(i,j) = (Hz(i,j) - Hz(i,j-1))/dy;
+        %                 end
+        %             end
+        %             for j = 1:Ny
+        %                 CHy(1,j) = - (Hz(1,j) - 0)/dx;
+        %             end
+        %             for i = 2:Nx
+        %                 for j = 1:Ny
+        %                     CHy(i,j) = - (Hz(i,j) - Hz(i-1,j))/dx;
+        %                 end
+        %             end
+        CHx(1:Nx,1) = (Hz(1:Nx,1) - 0)/dy;
+        CHx(1:Nx,2:Ny) = (Hz(1:Nx,2:Ny) - Hz(1:Nx,1:Ny-1))/dy;
+        CHy(1,1:Ny) = - (Hz(1,1:Ny) - 0)/dx;
+        CHy(2:Nx,1:Ny) = (Hz(1:Nx-1,1:Ny) - Hz(2:Nx,1:Ny))/dx;
+    end
+    if USE_PERIODIC_BC
+        %             for i = 1:Nx
+        %                 CHx(i,1) = (Hz(i,j) - Hz(i,Ny))/dy;
+        %                 for j = 2:Ny
+        %                     CHx(i,j) = (Hz(i,j) - Hz(i,j-1))/dy;
+        %                 end
+        %             end
+        %
+        %             for j = 1:Ny
+        %                 CHy(1,j) = - (Hz(1,j) - Hz(Nx,j))/dx;
+        %             end
+        %             for i = 2:Nx
+        %                 for j = 1:Ny
+        %                     CHy(i,j) = - (Hz(i,j) - Hz(i-1,j))/dx;
+        %                 end
+        %             end
+        CHx(1:Nx,1) = (Hz(1:Nx,1) - Hz(1:Nx,Ny))/dy;
+        CHx(1:Nx,2:Ny) = (Hz(1:Nx,2:Ny) - Hz(1:Nx,1:Ny-1))/dy;
+        CHy(1,1:Ny) = - (Hz(1,1:Ny) - Hz(Nx,1:Ny))/dx;
+        CHy(2:Nx,1:Ny) = - (Hz(2:Nx,1:Ny) - Hz(1:Nx-1,1:Ny))/dx;
+    end
+        
+    % INJECT TF/SF SOURCE INTO H
+    if USE_TFSF_SOURCE
+        CHx(Nx_src_lo_AND:Nx_src_hi_AND, Ny_src_lo_AND) = ...
+            CHx(Nx_src_lo_AND:Nx_src_hi_AND, Ny_src_lo_AND) + ...
+            Hsrc_full_AND(:,T)/dy;
+
+        CHx(Nx_src_lo_NOT:Nx_src_hi_NOT, Ny_src_lo_NOT) = ...
+            CHx(Nx_src_lo_NOT:Nx_src_hi_NOT, Ny_src_lo_NOT) + ...
+            Hsrc_full_NOT(:,T)/dy;
+    end
+    % UPDATE D INTEGRATIONS
+    ICHx = ICHx + CHx;
+    ICHy = ICHy + CHy;
+    % UPDATE D FIELD
+    Dx = mDx1.*Dx + mDx2.*CHx + mDx3.*ICHx;
+    Dy = mDy1.*Dy + mDy2.*CHy + mDy3.*ICHy;
+    % UPDATE E FIELD
+    if APPLY_NONLINEARITY
+        AbsD2 = (Dx.^2+Dy.^2);
+        Ex = mEx1.*Dx.*(1+mAbsDx1.*AbsD2) ./...
+            (1+mAbsDx2.*AbsD2);
+        Ey = mEy1.*Dy.*(1+mAbsDy1.*AbsD2) ./...
+            (1+mAbsDy2.*AbsD2);
+    else
+        Ex = mEx1.*Dx;
+        Ey = mEy1.*Dy;
+    end
+    % CALCULATE LEARNING PARAMETERS
+    if DO_TRANSFER_CALCULATION
+        % AND PART
+        curr_trn_hz_AND(2:2:end,T) = Hz(rec_line_AND.x, rec_line_AND.y - NCELL(2)/2);
+        curr_trn_hz_AND(1:2:end,T) = Hz(rec_line_AND.x, rec_line_AND.y);
+
+        % NOT PART
+        curr_trn_hz_NOT(2:2:end,T) = Hz(rec_line_NOT.x, rec_line_AND.y - NCELL(2)/2);
+        curr_trn_hz_NOT(1:2:end,T) = Hz(rec_line_NOT.x, rec_line_NOT.y);
+
 %             ERx(round(Nx/2),BUFFS(1) - NCELL(2)/2 + (1:CELLS(2)).*(NCELL(2))) = 100;
 %             ERx(round(Nx/2),BUFFS(1) + (1:CELLS(2)).*(NCELL(2))) = 100;
 %             imagesc(ERx); 
@@ -1391,69 +1112,65 @@ for T = 1:STEPS
 %             
 %             curr_trn_ey(2:2:end,T) = Ey(round(Nx/2),BUFFS(1) - NCELL(2)/2 + (1:CELLS(2)).*(NCELL(2)));
 %             curr_trn_ey(1:2:end,T) = Ey(round(Nx/2),BUFFS(1) + (1:CELLS(2)).*(NCELL(2)));
+    end
+    if DO_FULL_RECORDING
+        if ~mod(T,steps_per_recording)
+            upper_guide_recording(:,T/steps_per_recording) = Hz(round(BUFFS(2) + (CELLS(1)/2-2)*NCELL(2)*sqrt(3)/2),...
+                                         observation_points_upper);
+            middle_guide_recording(:,T/steps_per_recording) = Hz(round(Nx/2), observation_points_middle);
         end
-        if DO_FULL_RECORDING
-        	if ~mod(T,steps_per_recording)
-                upper_guide_recording(:,T/steps_per_recording) = Hz(round(BUFFS(2) + (CELLS(1)/2-2)*NCELL(2)*sqrt(3)/2),...
-                                             observation_points_upper);
-                middle_guide_recording(:,T/steps_per_recording) = Hz(round(Nx/2), observation_points_middle);
-            end
+    end
+        
+    % VISUALISE THE FIELD
+    if ~mod(T,FPS)
+        if DISPLAY_TRANSFER_WINDOW
+            subplot(2,2,[1 2]);
         end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %% VISUALISE THE FIELD
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if ~mod(T,FPS)
-            if DISPLAY_TRANSFER_WINDOW
-                subplot(2,2,[1 2]);
+        OPTS.cmap = 'jet';
+        if USE_HSRC
+            OPTS.emax = src_max * 1.5;
+        end
+        if USE_TEZ_MODE
+            if USE_ADVANCED_VISUALISATION
+                draw2d(ya,xa,ERx',Hz',NPML);
+            else
+                imagesc(Hz);
             end
-            OPTS.cmap = 'jet';
-            if USE_HSRC
-                OPTS.emax = src_max * 1.5;
-            end
-            if USE_TEZ_MODE
-                if USE_ADVANCED_VISUALISATION
-                    draw2d(ya,xa,ERx',Hz',NPML);
-                else
-                    imagesc(Hz);
-                end
-                if DISPLAY_LABELS
-                    title(['Time step :', int2str(T),...
-                        ', Hz Mode, \omega =', ...
-                        num2str(NORMALIZED_FREQ), ' ',...
-                        'A_{upper} = ',num2str(beam_upper_amp_AND), ' ',...
-                        'A_{lower} = ',num2str(beam_lower_amp_AND), ' ']);
-                end
-            end
-            axis image;
             if DISPLAY_LABELS
-                gca;
-                c = colorbar;
-                c.Label.String = 'Hz Field Amplitude';
-                caxis([-OPTS.emax OPTS.emax]);
-                xlabel('$\mathbf{X}$','Interpreter', 'latex');
-                ylabel('$\mathbf{Y}$        ','Interpreter', 'latex');
+                title(['Time step :', int2str(T),...
+                    ', Hz Mode, \omega =', ...
+                    num2str(NORMALIZED_FREQ), ' ',...
+                    'A_{upper} = ',num2str(beam_upper_amp_AND), ' ',...
+                    'A_{lower} = ',num2str(beam_lower_amp_AND), ' ']);
             end
-            set(get(gca,'YLabel'),'Rotation',0)
-            set(gca,'YTickLabel',[]);
-            set(gca,'XTickLabel',[]);
-            if DISPLAY_TRANSFER_WINDOW
-                subplot(2,2,[3 4]);
+        end
+        axis image;
+        if DISPLAY_LABELS
+            gca;
+            c = colorbar;
+            c.Label.String = 'Hz Field Amplitude';
+            caxis([-OPTS.emax OPTS.emax]);
+            xlabel('$\mathbf{X}$','Interpreter', 'latex');
+            ylabel('$\mathbf{Y}$        ','Interpreter', 'latex');
+        end
+        set(get(gca,'YLabel'),'Rotation',0)
+        set(gca,'YTickLabel',[]);
+        set(gca,'XTickLabel',[]);
+        if DISPLAY_TRANSFER_WINDOW
+            subplot(2,2,[3 4]);
 %                 plot(,'b-','LineWidth', 2);
 %                 hold on;
-                plot(upper_guide_recording(863,:),'r-','LineWidth', 2);
-                hold off;
-                title('Output amplitude');
-                ylim([-1 1] .* plotting_amp);
-            end
-            if RECORD_ANIMATION
-                F = getframe(gcf);
-                writeVideo(vidObj,F);
-            end
-            drawnow;
+            plot(upper_guide_recording(863,:),'r-','LineWidth', 2);
+            hold off;
+            title('Output amplitude');
+            ylim([-1 1] .* plotting_amp);
         end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        if RECORD_ANIMATION
+            F = getframe(gcf);
+            writeVideo(vidObj,F);
+        end
+        drawnow;
     end
-%     return;
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% AFTER LOOP STEPS       
