@@ -58,7 +58,7 @@ USE_SINGLE_PRECISION = false;
 
 % QUALITY OF LIFE PARAMETERS
 DISPLAY_LABELS = true;
-AUTO_FPS_ADJUSTMENT = true;
+AUTO_FPS_ADJUSTMENT = false;
 SHUTDOWN_ON_EXIT = false;
 PLAY_ON_FINISH = false;
 DISPLAY_TRANSFER_WINDOW = true;
@@ -68,7 +68,7 @@ DO_FOURIER_TRANSFORM = false;
 DO_TRANSFER_CALCULATION = false;
 
 % ADVANCED TESTING
-USE_EMPTY_GRID      = false;
+USE_EMPTY_GRID      = true;
 USE_FULL_TFSF_BOX   = false;
 USE_TFSF_SOURCE     = true;
 USE_HARD_SOURCE     = false;
@@ -191,7 +191,7 @@ outlets.NOT.md = true;
 outlets.NOT.lo = true;
 
 JUST_VISUALIZE_STRUCTURE = false;
-JUST_VISUALIZE_SOURCE = true;
+JUST_VISUALIZE_SOURCE = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% OPEN A FIGURE WINDOW
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -299,141 +299,105 @@ diameter_cell_matrix(round(CellNx/2)+2+2,CellNy/2+half_bridge_len:CellNy) = -2i;
 % OUTLETS
  % AND PART
  % upper
- if outlets.AND.up
- for nlayer = 1:8
-    idiff = -nlayer-1; 
-    jdiff = +ceil((nlayer)/2);
-    
-%     eps_cell_matrix(round(CellNx/2)+idiff,...
-%         CellNy/2-half_bridge_len+jdiff+1)   = n_filler^2;
-%     chi_cell_matrix(round(CellNx/2)+idiff,...
-%         CellNy/2-half_bridge_len+jdiff+1)   = chi3;
-    
-%     eps_cell_matrix(round(CellNx/2)+idiff,...
-%         CellNy/2-half_bridge_len+jdiff)   = n_filler^2;
-%     chi_cell_matrix(round(CellNx/2)+idiff,...
-%         CellNy/2-half_bridge_len+jdiff)   = chi3;
-    
-    diameter_cell_matrix(round(CellNx/2)+idiff,...
-        CellNy/2-half_bridge_len+jdiff)   = -2i;
-    
-%     eps_cell_matrix(round(CellNx/2)+idiff,...
-%         CellNy/2-half_bridge_len+jdiff-1)   = n_filler^2;
-%     chi_cell_matrix(round(CellNx/2)+idiff,...
-%         CellNy/2-half_bridge_len+jdiff-1)   = chi3;
- end
- end
- % lower
- if outlets.AND.lo
-  for nlayer = 1:7
-    idiff = nlayer+2; 
-    jdiff = +floor((nlayer)/2);
-    
-%    eps_cell_matrix(round(CellNx/2)+idiff,...
-%             CellNy/2-half_bridge_len+jdiff+1)   = n_filler^2;
-%     chi_cell_matrix(round(CellNx/2)+idiff,...
-%             CellNy/2-half_bridge_len+jdiff+1)   = chi3;
-    
-%     eps_cell_matrix(round(CellNx/2)+idiff,...
-%             CellNy/2-half_bridge_len+jdiff)   = n_filler^2;
-%     chi_cell_matrix(round(CellNx/2)+idiff,...
-%             CellNy/2-half_bridge_len+jdiff)   = chi3;
-        
-    diameter_cell_matrix(round(CellNx/2)+idiff,...
-            CellNy/2-half_bridge_len+jdiff)   = -2i;
-        
-%     eps_cell_matrix(round(CellNx/2)+idiff,...
-%             CellNy/2-half_bridge_len+jdiff-1)   = n_filler^2;
-%     chi_cell_matrix(round(CellNx/2)+idiff,...
-%             CellNy/2-half_bridge_len+jdiff-1)   = chi3;
- end
- end
- % NOT PART
- % lower
- % For CW
- if outlets.NOT.md
- for nlayer = 2:11
-    idiff = nlayer + 2 - 2;
-    jdiff = -ceil((nlayer-2)/2);
-%     eps_cell_matrix(round(CellNx/2)+idiff,...
-%             CellNy/2+half_bridge_len+jdiff)     = n_filler^2;
-%     chi_cell_matrix(round(CellNx/2)+idiff,...
-%             CellNy/2+half_bridge_len+jdiff)     = chi3;
-        
-%     eps_cell_matrix(round(CellNx/2)+idiff,...
-%             CellNy/2+half_bridge_len+jdiff-1)     = n_filler^2;
-%     chi_cell_matrix(round(CellNx/2)+idiff,...
+%  if outlets.AND.up
+%  for nlayer = 1:8
+%     idiff = -nlayer-1; 
+%     jdiff = +ceil((nlayer)/2);
+%     
+% %     eps_cell_matrix(round(CellNx/2)+idiff,...
+% %         CellNy/2-half_bridge_len+jdiff+1)   = n_filler^2;
+% %     chi_cell_matrix(round(CellNx/2)+idiff,...
+% %         CellNy/2-half_bridge_len+jdiff+1)   = chi3;
+%     
+% %     eps_cell_matrix(round(CellNx/2)+idiff,...
+% %         CellNy/2-half_bridge_len+jdiff)   = n_filler^2;
+% %     chi_cell_matrix(round(CellNx/2)+idiff,...
+% %         CellNy/2-half_bridge_len+jdiff)   = chi3;
+%     
+%     diameter_cell_matrix(round(CellNx/2)+idiff,...
+%         CellNy/2-half_bridge_len+jdiff)   = -2i;
+%     
+% %     eps_cell_matrix(round(CellNx/2)+idiff,...
+% %         CellNy/2-half_bridge_len+jdiff-1)   = n_filler^2;
+% %     chi_cell_matrix(round(CellNx/2)+idiff,...
+% %         CellNy/2-half_bridge_len+jdiff-1)   = chi3;
+%  end
+%  end
+%  % lower
+%  if outlets.AND.lo
+%   for nlayer = 1:7
+%     idiff = nlayer+2; 
+%     jdiff = +floor((nlayer)/2);
+%     
+% %    eps_cell_matrix(round(CellNx/2)+idiff,...
+% %             CellNy/2-half_bridge_len+jdiff+1)   = n_filler^2;
+% %     chi_cell_matrix(round(CellNx/2)+idiff,...
+% %             CellNy/2-half_bridge_len+jdiff+1)   = chi3;
+%     
+% %     eps_cell_matrix(round(CellNx/2)+idiff,...
+% %             CellNy/2-half_bridge_len+jdiff)   = n_filler^2;
+% %     chi_cell_matrix(round(CellNx/2)+idiff,...
+% %             CellNy/2-half_bridge_len+jdiff)   = chi3;
+%         
+%     diameter_cell_matrix(round(CellNx/2)+idiff,...
+%             CellNy/2-half_bridge_len+jdiff)   = -2i;
+%         
+% %     eps_cell_matrix(round(CellNx/2)+idiff,...
+% %             CellNy/2-half_bridge_len+jdiff-1)   = n_filler^2;
+% %     chi_cell_matrix(round(CellNx/2)+idiff,...
+% %             CellNy/2-half_bridge_len+jdiff-1)   = chi3;
+%  end
+%  end
+%  % NOT PART
+%  % lower
+%  % For CW
+%  if outlets.NOT.md
+%  for nlayer = 2:11
+%     idiff = nlayer + 2 - 2;
+%     jdiff = -ceil((nlayer-2)/2);
+% %     eps_cell_matrix(round(CellNx/2)+idiff,...
+% %             CellNy/2+half_bridge_len+jdiff)     = n_filler^2;
+% %     chi_cell_matrix(round(CellNx/2)+idiff,...
+% %             CellNy/2+half_bridge_len+jdiff)     = chi3;
+%         
+% %     eps_cell_matrix(round(CellNx/2)+idiff,...
+% %             CellNy/2+half_bridge_len+jdiff-1)     = n_filler^2;
+% %     chi_cell_matrix(round(CellNx/2)+idiff,...
+% %             CellNy/2+half_bridge_len+jdiff-1)     = chi3;  
+%     diameter_cell_matrix(round(CellNx/2)+idiff,...
 %             CellNy/2+half_bridge_len+jdiff-1)     = chi3;  
-    diameter_cell_matrix(round(CellNx/2)+idiff,...
-            CellNy/2+half_bridge_len+jdiff-1)     = chi3;  
-%     eps_cell_matrix(round(CellNx/2)+idiff+0,...
-%             CellNy/2+half_bridge_len+jdiff-2)     = n_filler^2;
-%     chi_cell_matrix(round(CellNx/2)+idiff+0,...
-%             CellNy/2+half_bridge_len+jdiff-2)     = chi3;  
- end
- end
- % For Lower Pulse Train
- if outlets.NOT.lo
-  for nlayer = 2:11
-    idiff = nlayer + 2;
-    jdiff = -ceil((nlayer-2)/2) + 1;
-    
-%     eps_cell_matrix(round(CellNx/2)+idiff,...
-%             CellNy/2+half_bridge_len+jdiff-1)     = n_filler^2;
-%     chi_cell_matrix(round(CellNx/2)+idiff,...
+% %     eps_cell_matrix(round(CellNx/2)+idiff+0,...
+% %             CellNy/2+half_bridge_len+jdiff-2)     = n_filler^2;
+% %     chi_cell_matrix(round(CellNx/2)+idiff+0,...
+% %             CellNy/2+half_bridge_len+jdiff-2)     = chi3;  
+%  end
+%  end
+%  % For Lower Pulse Train
+%  if outlets.NOT.lo
+%   for nlayer = 2:11
+%     idiff = nlayer + 2;
+%     jdiff = -ceil((nlayer-2)/2) + 1;
+%     
+% %     eps_cell_matrix(round(CellNx/2)+idiff,...
+% %             CellNy/2+half_bridge_len+jdiff-1)     = n_filler^2;
+% %     chi_cell_matrix(round(CellNx/2)+idiff,...
+% %             CellNy/2+half_bridge_len+jdiff-1)     = chi3;  
+%     diameter_cell_matrix(round(CellNx/2)+idiff,...
 %             CellNy/2+half_bridge_len+jdiff-1)     = chi3;  
-    diameter_cell_matrix(round(CellNx/2)+idiff,...
-            CellNy/2+half_bridge_len+jdiff-1)     = chi3;  
-  end
- end
+%   end
+%  end
 
-% REMOVE MID SECTION CYLINDERS
-% eps_cell_matrix(1:CellNx,...
-%     linspRound(CellNy/2+1,half_bridge_len,1)) = n_filler^2;
-% chi_cell_matrix(1:CellNx,...
-%     linspRound(CellNy/2+1,half_bridge_len,1)) = chi3;
-
-% eps_cell_matrix(round(CellNx/2),  ...
-%     CellNy/2-half_bridge_len:CellNy/2+half_bridge_len)   = n_filler^2;
-% eps_cell_matrix(round(CellNx/2)-2,...
-%     CellNy/2-half_bridge_len:CellNy/2+half_bridge_len) = n_filler^2;
-% eps_cell_matrix(round(CellNx/2)+2,...
-%     CellNy/2-half_bridge_len:Ny) = n_filler^2;
-% eps_cell_matrix(round(CellNx/2)-2,...
-%     CellNy/2-half_bridge_len:Ny) = n_filler^2;
-% eps_cell_matrix(round(CellNx/2)+4,...
-%     1:Ny) = n_filler^2;
-
-% THE REST
-% eps_cell_matrix(1:round(CellNx/2)-1,1:3) = 1;
-% eps_cell_matrix(round(CellNx/2)+1:CellNx,1:3) = 1;
 
 
 % The bridge section 
-diameter_cell_matrix(round(CellNx/2), linspRound(CellNy/2, 2, 1)) = -2i; 
-
-% Longer upper guide from top of AND part
-% diameter_cell_matrix(round(CellNx/2) - 2,...
-%     round(CellNy/2)-4:round(CellNy/2)) = -2i; 
-
-% Two special cylinders for bending upper AND guide
-% diameter_cell_matrix(round(CellNx/2) - 2,...
-%     round(CellNy/2) + 2 - 5) = 1 / cylinder_diameters(1) * bending_cylinder_diameters(1);
-% diameter_cell_matrix(round(CellNx/2) - 3,...
-%     round(CellNy/2) + 3 - 5) = 1 / cylinder_diameters(1) * bending_cylinder_diameters(1);
-
-% Two special cylinders for bending lower AND guide
-% diameter_cell_matrix(round(CellNx/2) + 2,...
-%     round(CellNy/2) - 4) = 1 / cylinder_diameters(1) * bending_cylinder_diameters(1);
-% diameter_cell_matrix(round(CellNx/2) + 3,...
-%     round(CellNy/2) - 3) = 1 / cylinder_diameters(1) * bending_cylinder_diameters(1);
+% diameter_cell_matrix(round(CellNx/2), linspRound(CellNy/2, 2, 1)) = -2i; 
 
 % Cutting the arrowhead at the end of AND part
 
-diameter_cell_matrix(round(CellNx/2) - 1,...
-    round(CellNy/2) - 3) = -2i;
-diameter_cell_matrix(round(CellNx/2) + 1,...
-    round(CellNy/2) - 3) = -2i;
+% diameter_cell_matrix(round(CellNx/2) - 1,...
+%     round(CellNy/2) - 3) = -2i;
+% diameter_cell_matrix(round(CellNx/2) + 1,...
+%     round(CellNy/2) - 3) = -2i;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% PECs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -942,9 +906,21 @@ if JUST_VISUALIZE_STRUCTURE
     axis image;
     return;
 end
+%% Convert arrays to GPUArray
+s = whos;
+for i = 1:length(s)
+%   if strcmp(s(i).class,'single')
+    name = s(i).name;
+    var = evalin('base', name);    
+    if isnumeric(var) && ~isscalar(var) 
+        assignin('base', name, gpuArray(var));
+    end
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% MAIN FDTD LOOP   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+start_time = tic;
 for T = 1:STEPS
     % COMPUTE CURL OF E
     % Hz Ex Ey CEz
@@ -1094,28 +1070,6 @@ for T = 1:STEPS
         Ey = mEy1.*Dy;
     end
     % CALCULATE LEARNING PARAMETERS
-    if DO_TRANSFER_CALCULATION
-        % AND PART
-        curr_trn_hz_AND(2:2:end,T) = Hz(rec_line_AND.x, rec_line_AND.y - NCELL(2)/2);
-        curr_trn_hz_AND(1:2:end,T) = Hz(rec_line_AND.x, rec_line_AND.y);
-
-        % NOT PART
-        curr_trn_hz_NOT(2:2:end,T) = Hz(rec_line_NOT.x, rec_line_AND.y - NCELL(2)/2);
-        curr_trn_hz_NOT(1:2:end,T) = Hz(rec_line_NOT.x, rec_line_NOT.y);
-
-%             ERx(round(Nx/2),BUFFS(1) - NCELL(2)/2 + (1:CELLS(2)).*(NCELL(2))) = 100;
-%             ERx(round(Nx/2),BUFFS(1) + (1:CELLS(2)).*(NCELL(2))) = 100;
-%             imagesc(ERx); 
-%             ERx(BUFFS(1) + (CELLS(1)/2 + 1/2).*(NCELL(1)),BUFFS(1) - NCELL(2)/2 + (1:CELLS(2)).*(NCELL(2))) = 100;
-%             ERx(BUFFS(1) + (CELLS(1)/2 + 1/2).*(NCELL(1)),BUFFS(1) + (1:CELLS(2)).*(NCELL(2))) = 100;
-%             imagesc(ERx);
-%             return;
-%             curr_trn_ex(2:2:end,T) = Ex(round(Nx/2),BUFFS(1) - NCELL(2)/2 + (1:CELLS(2)).*(NCELL(2)));
-%             curr_trn_ex(1:2:end,T) = Ex(round(Nx/2),BUFFS(1) + (1:CELLS(2)).*(NCELL(2)));
-%             
-%             curr_trn_ey(2:2:end,T) = Ey(round(Nx/2),BUFFS(1) - NCELL(2)/2 + (1:CELLS(2)).*(NCELL(2)));
-%             curr_trn_ey(1:2:end,T) = Ey(round(Nx/2),BUFFS(1) + (1:CELLS(2)).*(NCELL(2)));
-    end
     if DO_FULL_RECORDING
         if ~mod(T,steps_per_recording)
             upper_guide_recording(:,T/steps_per_recording) = Hz(round(BUFFS(2) + (CELLS(1)/2-2)*NCELL(2)*sqrt(3)/2),...
@@ -1126,6 +1080,11 @@ for T = 1:STEPS
         
     % VISUALISE THE FIELD
     if ~mod(T,FPS)
+        
+        elapsed = toc(start_time);
+        
+        start_time = tic;
+        plot_start_time = tic;
         if DISPLAY_TRANSFER_WINDOW
             subplot(2,2,[1 2]);
         end
@@ -1135,8 +1094,14 @@ for T = 1:STEPS
         end
         if USE_TEZ_MODE
             if USE_ADVANCED_VISUALISATION
-                draw2d(ya,xa,ERx',Hz',NPML);
+                ya_cpu = gather(ya);
+                xa_cpu = gather(xa);
+                ERx_cpu = gather(ERx);
+                Hz_cpu = gather(Hz);
+                NPML_cpu = gather(NPML);
+                draw2d(ya_cpu,xa_cpu,ERx_cpu',Hz_cpu',NPML_cpu);
             else
+                Hz_cpu = gather(Hz);
                 imagesc(Hz);
             end
             if DISPLAY_LABELS
@@ -1144,7 +1109,10 @@ for T = 1:STEPS
                     ', Hz Mode, \omega =', ...
                     num2str(NORMALIZED_FREQ), ' ',...
                     'A_{upper} = ',num2str(beam_upper_amp_AND), ' ',...
-                    'A_{lower} = ',num2str(beam_lower_amp_AND), ' ']);
+                    'A_{lower} = ',num2str(beam_lower_amp_AND), ' ', ...
+                    num2str(elapsed), 's per ',...
+                    num2str(FPS), 'timesteps'
+                    ]);
             end
         end
         axis image;
@@ -1173,6 +1141,7 @@ for T = 1:STEPS
             writeVideo(vidObj,F);
         end
         drawnow;
+        plot_elapsed = toc(plot_start_time);
     end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
