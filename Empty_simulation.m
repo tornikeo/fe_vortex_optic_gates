@@ -53,7 +53,7 @@ USE_HSRC = true;
 % ADVANCED SIMULATION
 USE_ADVANCED_VISUALISATION = true;
 DO_DIELECTRIC_SMOOTHING = true;
-APPLY_NONLINEARITY = true;
+APPLY_NONLINEARITY = false;
 USE_SINGLE_PRECISION = false;
 USE_CUDA = true;
 
@@ -133,7 +133,7 @@ FMAX    = 5.0 * gigahertz;
 NFREQ   = 1000;
 FREQ    = linspace(0,FMAX,NFREQ);
 LAMD    = 1.55 * micrometers;
-STEPS   = 200000;
+STEPS   = 5000;
 BEAM_WIDTH   = round(NCELL(2) * sqrt(3)/2 / 2);
 SRC_START_WIDTH = 1200;
 SRC_START   = SRC_START_WIDTH * 4;
@@ -1106,15 +1106,15 @@ for T = 1:STEPS
                 imagesc(Hz);
             end
             if DISPLAY_LABELS
-                title(['Time step :', int2str(T),...
-                    ', Hz Mode, \omega =', ...
-                    num2str(NORMALIZED_FREQ), ' ',...
-                    'A_{upper} = ',num2str(beam_upper_amp_AND), ' ',...
-                    'A_{lower} = ',num2str(beam_lower_amp_AND), ' ', ...
-                    num2str(elapsed), 's per ',...
-                    num2str(FPS), 'timesteps',...
-                    num2str(plot_elapsed),'s to plot'
-                    ]);
+                txt = {['Time step :', int2str(T),...
+                    ', Hz Mode, omega =', num2str(NORMALIZED_FREQ), ' '],...
+                    [num2str(elapsed), ' s per ',...
+                    num2str(FPS), ' ts  ',...
+                    num2str(plot_elapsed),' s to plot '
+                    ]};
+                title('Hz');
+                annotation('textbox', [0.15, 0.49, .75, .1], 'string', ...
+                txt,'EdgeColor','blue')
             end
         end
         axis image;
@@ -1144,6 +1144,7 @@ for T = 1:STEPS
         end
         drawnow;
         plot_elapsed = toc(plot_start_time);
+        return
     end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
