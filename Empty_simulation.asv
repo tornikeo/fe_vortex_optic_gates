@@ -998,11 +998,10 @@ for T = 1:STEPS
         Ey = mEy1.*Dy.*(1+mAbsDy1.*AbsD2) ./...
             (1+mAbsDy2.*AbsD2);
     else
-        % Just linear case, D is c3 * E
+        % Just 
         Ex = mEx1.*Dx;
         Ey = mEy1.*Dy;
     end
-    
     % CALCULATE LEARNING PARAMETERS
     if DO_FULL_RECORDING
         if ~mod(T,steps_per_recording)
