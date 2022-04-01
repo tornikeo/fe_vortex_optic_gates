@@ -110,12 +110,15 @@ cylinder_diameters = NCELL .* 0.32;
 bridge_cylinder_diamters = NCELL .* 0.1;
 bending_cylinder_diameters = [NCELL .* 0.125];
 coupling_cylinder_diameters = NCELL .* 0.25;
-NORMALIZED_FREQ = 0.232; %h/omega
+NORMALIZED_FREQ = 0.232; %h/omega % I believe this is what should be 0.542 to reflect 
+                         % And 0.539 to pass.
 bridge_length = 1;
 
 % MATERIAL PARAMETERS
-n_filler= 2.95;
-n_cyl   = 1;
+n_filler= 1; % Working in vacuum
+n_cyl   = 1; % This should be instead two params. eps_tilde_1, eps_tilde_2
+             % eps_tilde_1 = 1 - 0.01 * (h/lamd)**-2 * sin2(phi)
+             % eps_tilde_3 = 1 - 0.01 * (h/lamd)**-2 * cos2(phi)
 n_coupl = 1;
 chi3    = 1e-4;
 ermax   = 2;
@@ -526,7 +529,7 @@ dt = 0.95/(sqrt(1/dx^2 + 1/dy^2)*c0);
 %% COMPUTE SOURCE   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % MUTUAL PARAMETERS
-tau           = PULSE_LENGTH*dt;
+tau     = PULSE_LENGTH*dt;
 omega   = 2*pi*c0 / LAMD * NORMALIZED_FREQ;
 t_axis  = (0:STEPS-1)*dt;
 tprop   = nmax*sqrt(Nx^2 + Ny^2)*sqrt(dx^2 + dy^2)/c0;
@@ -1042,11 +1045,12 @@ for T = 1:STEPS
                     [num2str(elapsed), ' s per ',...
                     num2str(FPS), ' ts  ',...
                     num2str(plot_elapsed),' s to plot ',...
-                    'nonlinearity ', num2str(APPLY_NONLINEARITY), ...
+                    'nonlinearity ', num2str(APPLY_NONLINEARITY), ' '...
+                    'n_filler ', num2str(n_filler), ' '...
                     ]};
                 title('Hz');
                 annotation('textbox', [0.15, 0.49, .75, .1], 'string', ...
-                txt,'EdgeColor','none')
+                txt,'EdgeColor','none', 'Interpreter', 'none')
             end
         end
         axis image;
@@ -1055,8 +1059,8 @@ for T = 1:STEPS
             c = colorbar;
             c.Label.String = 'Hz Field Amplitude';
             caxis([-OPTS.emax OPTS.emax]);
-            xlabel('$\mathbf{X}$','Interpreter', 'latex');
-            ylabel('$\mathbf{Y}$        ','Interpreter', 'latex');
+%             xlabel('$\mathbf{X}$','Interpreter', 'latex');
+%             ylabel('$\mathbf{Y}$        ','Interpreter', 'latex');
         end
         set(get(gca,'YLabel'),'Rotation',0)
         set(gca,'YTickLabel',[]);
