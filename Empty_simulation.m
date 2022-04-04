@@ -76,24 +76,8 @@ USE_HARD_SOURCE     = false;
 USE_DIRICHLET_BC    = true;
 USE_PERIODIC_BC     = false;
 
-% cases = 1 + logspace(-4,-1,10);
-% cases = [cases, 1-logspace(-4,-1,10)];
-% cases = linspace(0.5, 1.5, 20);
-% cases_upper = [45, 50, 55,  60];
-% cases_lower = [70, 80, 90, 100];
-
-cases_upper_AND = [-55,-55,-55,-55];
-cases_middle_AND= [105,105,105,105];
-cases_lower_AND = [-55,-55,-55,-55];
-
-cases_upper_NOT = [0,0,0,0];%[40];
-cases_middle_NOT= [0,0,0,0];%[110];
-cases_lower_NOT = [0,0,0,0];%[-90];
-
 cases_brd_dim = [0.1000];
 
-% plot(cases);
-% break;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% DASHBOARD        
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
