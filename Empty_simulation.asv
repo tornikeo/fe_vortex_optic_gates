@@ -94,15 +94,11 @@ NDIM    = 3;
 
 % DEVICE PARAMETERS
 NCELL   = [18 18];
-CELLS   = [6 10]; %[15, 30];
+CELLS   = [19 88]; %[15, 30];
+NDEVICE = ceil(CELLS .* NCELL .* [(sqrt(3)/2), 1]);
 
-% This is for cylinders
-% NDEVICE = ceil(CELLS .* NCELL .* [(sqrt(3)/2), 1]);
-NDEVICE = ceil(CELLS .* NCELL .* [1, 1]);
-
-rod_width = NCELL .* 1.0;
+rod_width = NCELL .* 0.32;
 rod_height = NCELL .* 1.0;
-
 cylinder_diameters = NCELL .* 0.32;
 
 bridge_cylinder_diamters = NCELL .* 0.1;
@@ -117,9 +113,6 @@ n_filler= 1; % Working in vacuum
 n_cyl   = 1; % This should be instead two params. eps_tilde_1, eps_tilde_2
              % eps_tilde_1 = 1 - 0.01 * (h/lamd)**-2 * sin2(phi)
              % eps_tilde_3 = 1 - 0.01 * (h/lamd)**-2 * cos2(phi)
-             
-n_rod = 2; %  TODO: this should be upper as above!
-
 n_coupl = 1;
 chi3    = 1e-4;
 ermax   = 2;
@@ -181,6 +174,12 @@ DO_FULL_RECORDING = true;
 steps_per_recording = 100;
 file_name = [gen_name_prefix, num2str(round(0.1 * 1000)),'_brd.mat'];%['NAND_GATE_cases_',num2str(ncase),'_',datestr(now,'mmmm dd HH-MM'),'.mat'];
 
+if DO_FULL_RECORDING
+    observation_points_upper = 1:1618;
+    observation_points_middle = 1:1618;
+elseif RECORD_FIELDS
+    save(file_name);
+end
 
 JUST_VISUALIZE_STRUCTURE = false;
 JUST_VISUALIZE_SOURCE = false;
@@ -209,13 +208,6 @@ dy   = LAMD / NCELL(1);
 BUFFS   = NBUFF + NPML;
 Nx      = sum(BUFFS(1:2)) + NDEVICE(1);
 Ny      = sum(BUFFS(3:4)) + NDEVICE(2);
-
-if DO_FULL_RECORDING
-    observation_points_upper = 1:Ny;
-    observation_points_middle = 1:Ny;
-elseif RECORD_FIELDS
-    save(file_name);
-end
 
 % COMPUTE GRID AXIS
 xa = (0:Nx-1).*dx;
@@ -260,8 +252,7 @@ width_cell_matrix = ones(CellNx,CellNy);
 % eps_cell_matrix(round(CellNx/2-1)-1,CellNy-5) = n_air^2;
 % eps_cell_matrix(round(CellNx/2):round(CellNx/2+1),5:CellNy-6) = n_coupl^2;
 % chi_cell_matrix(round(CellNx/2):round(CellNx/2+1),5:CellNy-6) = chi3;
-
-eps_cell_matrix = eps_cell_matrix .* n_rod^2;
+eps_cell_matrix = eps_cell_matrix .* n_cyl^2;
 half_bridge_len = round(bridge_length/2) + 2;
 
 
@@ -1005,9 +996,9 @@ for T = 1:STEPS
         CEz(Nx_src_lo_AND:Nx_src_hi_AND, Ny_src_lo_AND-1) = ...
             CEz(Nx_src_lo_AND:Nx_src_hi_AND, Ny_src_lo_AND-1) - ...
             Esrc_full_AND(:,T)/dy;
-%         CEz(Nx_src_lo_NOT:Nx_src_hi_NOT, Ny_src_lo_NOT-1) = ...
-%             CEz(Nx_src_lo_NOT:Nx_src_hi_NOT, Ny_src_lo_NOT-1) - ...
-%             Esrc_full_NOT(:,T)/dy;
+        CEz(Nx_src_lo_NOT:Nx_src_hi_NOT, Ny_src_lo_NOT-1) = ...
+            CEz(Nx_src_lo_NOT:Nx_src_hi_NOT, Ny_src_lo_NOT-1) - ...
+            Esrc_full_NOT(:,T)/dy;
     end
     % UPDATE H INTEGRATIONS
     IHz = IHz + Hz;
@@ -1033,11 +1024,10 @@ for T = 1:STEPS
         CHx(Nx_src_lo_AND:Nx_src_hi_AND, Ny_src_lo_AND) = ...
             CHx(Nx_src_lo_AND:Nx_src_hi_AND, Ny_src_lo_AND) + ...
             Hsrc_full_AND(:,T)/dy;
-% This injects another source in the middle of the system (to see
-% combination)
-%         CHx(Nx_src_lo_NOT:Nx_src_hi_NOT, Ny_src_lo_NOT) = ...
-%             CHx(Nx_src_lo_NOT:Nx_src_hi_NOT, Ny_src_lo_NOT) + ...
-%             Hsrc_full_NOT(:,T)/dy;
+
+        CHx(Nx_src_lo_NOT:Nx_src_hi_NOT, Ny_src_lo_NOT) = ...
+            CHx(Nx_src_lo_NOT:Nx_src_hi_NOT, Ny_src_lo_NOT) + ...
+            Hsrc_full_NOT(:,T)/dy;
     end
     % UPDATE D INTEGRATIONS
     ICHx = ICHx + CHx;
@@ -1064,11 +1054,9 @@ for T = 1:STEPS
     % CALCULATE LEARNING PARAMETERS
     if DO_FULL_RECORDING
         if ~mod(T,steps_per_recording)
-            upper_guide_recording(:,T/steps_per_recording) = ...
-                Hz(round(BUFFS(2) + (CELLS(1)/2-2)*NCELL(2)*sqrt(3)/2),...
+            upper_guide_recording(:,T/steps_per_recording) = Hz(round(BUFFS(2) + (CELLS(1)/2-2)*NCELL(2)*sqrt(3)/2),...
                                          observation_points_upper);
-            middle_guide_recording(:,T/steps_per_recording) = ...
-                Hz(round(Nx/2), observation_points_middle);
+            middle_guide_recording(:,T/steps_per_recording) = Hz(round(Nx/2), observation_points_middle);
         end
     end
         
