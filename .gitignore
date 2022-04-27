@@ -4,3 +4,7 @@
 *.m~
 *.png
 *.zip
+
+## The packages
+fdtd
+media
